@@ -6,10 +6,12 @@ import {
   ChevronDown,
   CircleDollarSign,
   ClipboardList,
+  CreditCard,
   FileText,
   LayoutDashboard,
   LogOut,
   Package,
+  PieChart,
   ReceiptText,
   Scissors,
   Settings,
@@ -34,10 +36,15 @@ const menu = [
 ];
 
 const reports = [
-  { label: "Sales Reports", href: "/reports/sales", icon: BarChart3 },
-  { label: "Commission Reports", href: "/reports/commissions", icon: ReceiptText },
-  { label: "Expense Reports", href: "/reports/expenses", icon: ClipboardList },
-  { label: "Invoices", href: "/invoices", icon: FileText },
+  { label: "Overview", href: "/reports", icon: BarChart3 },
+  { label: "Sales", href: "/reports/sales", icon: ShoppingCart },
+  { label: "Payments", href: "/reports/payments", icon: CreditCard },
+  { label: "Services", href: "/reports/services", icon: Scissors },
+  { label: "Profit & Loss", href: "/reports/profit-loss", icon: PieChart },
+  { label: "Expenses", href: "/reports/expenses", icon: ClipboardList },
+  { label: "Customers", href: "/reports/customers", icon: Users },
+  { label: "Commissions", href: "/reports/commissions", icon: ReceiptText },
+  { label: "Cashier", href: "/reports/cashier", icon: FileText },
 ];
 
 export default function Sidebar({
