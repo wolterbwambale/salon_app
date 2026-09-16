@@ -1,0 +1,217 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  CASHIER
+  BARBER
+}
+
+enum PaymentMethod {
+  CASH
+  MOBILE_MONEY
+  CARD
+  BANK
+}
+
+enum PaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  REFUNDED
+}
+
+enum CommissionType {
+  PERCENTAGE
+  FIXED
+}
+
+enum CommissionStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum SaleStatus {
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(CASHIER)
+  active       Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sales      Sale[]
+  expenses   Expense[]
+  auditLogs  AuditLog[]
+}
+
+model Barber {
+  id        Int     @id @default(autoincrement())
+  name      String
+  phone     String?
+  email     String?
+  active    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  saleItems   SaleItem[]
+  commissions Commission[]
+}
+
+model Customer {
+  id      Int     @id @default(autoincrement())
+  name    String
+  phone   String?
+  email   String?
+  address String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sales Sale[]
+}
+
+model Service {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+  price       Decimal @db.Decimal(15, 2)
+  active      Boolean @default(true)
+
+  commissionType  CommissionType @default(PERCENTAGE)
+  commissionValue Decimal        @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  saleItems SaleItem[]
+}
+
+model Sale {
+  id            Int        @id @default(autoincrement())
+  invoiceNumber String     @unique
+
+  customerId Int?
+  cashierId  Int
+
+  subtotal Decimal @db.Decimal(15, 2)
+  discount Decimal @default(0) @db.Decimal(15, 2)
+  total    Decimal @db.Decimal(15, 2)
+
+  status SaleStatus @default(COMPLETED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer Customer? @relation(fields: [customerId], references: [id])
+  cashier  User      @relation(fields: [cashierId], references: [id])
+
+  items    SaleItem[]
+  payments Payment[]
+}
+
+model SaleItem {
+  id Int @id @default(autoincrement())
+
+  saleId    Int
+  serviceId Int
+  barberId  Int?
+
+  quantity Int @default(1)
+
+  unitPrice Decimal @db.Decimal(15, 2)
+  discount  Decimal @default(0) @db.Decimal(15, 2)
+  total     Decimal @db.Decimal(15, 2)
+
+  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id])
+  barber Barber? @relation(fields: [barberId], references: [id])
+
+  commission Commission?
+}
+
+model Commission {
+  id Int @id @default(autoincrement())
+
+  saleItemId Int @unique
+  barberId   Int
+
+  type  CommissionType
+  value Decimal @db.Decimal(15, 2)
+  amount Decimal @db.Decimal(15, 2)
+
+  status CommissionStatus @default(PENDING)
+  paidAt DateTime?
+
+  saleItem SaleItem @relation(fields: [saleItemId], references: [id])
+  barber   Barber   @relation(fields: [barberId], references: [id])
+}
+
+model Payment {
+  id Int @id @default(autoincrement())
+
+  saleId Int
+  amount Decimal @db.Decimal(15, 2)
+  method PaymentMethod
+  status PaymentStatus @default(PAID)
+  reference String?
+  paidAt DateTime @default(now())
+
+  sale Sale @relation(fields: [saleId], references: [id])
+}
+
+model ExpenseCategory {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  active Boolean @default(true)
+
+  expenses Expense[]
+}
+
+model Expense {
+  id Int @id @default(autoincrement())
+
+  categoryId Int
+  userId     Int
+
+  description String
+  amount      Decimal @db.Decimal(15, 2)
+  paymentMethod PaymentMethod
+  expenseDate DateTime @default(now())
+
+  category ExpenseCategory @relation(fields: [categoryId], references: [id])
+  user     User            @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id Int @id @default(autoincrement())
+
+  userId Int
+  action String
+  entity String
+  entityId Int?
+  description String?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
